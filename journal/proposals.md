@@ -4627,3 +4627,22 @@ against this cycle's live lease (contrary to its own tick-type rule) and clobber
   22:16Z.
 - **P9, P4, P7, subclass auto-tagger, P1, P2, P3(a), counterfactual end-date: Status: unchanged
   (PROPOSED).**
+
+## 2026-10-29 06:4xZ FULL (operator machine) - CLOB /book returns HTTP 451 from the operator runner
+
+- **NEW (HIGH): every `clob.polymarket.com/book` read from the operator machine fails with
+  `HTTP Error 451: Unavailable For Legal Reasons`** (`core/pmapi.py` `clob_book`, 3 retries).
+  - Evidence: this FULL (runner `operator`, paper, lease from loop.sh) formed concrete estimates
+    for the Rock Hill SC rally legs, but `core/forecast.py record` failed on 6326818 (Hormuz)
+    and again on 6326808 (Ass): same 451 both times. `core/ledger.py place` quotes the same
+    endpoint, so no bet could be placed either (Hormuz No had ask-edge 0.14 at 06:4xZ). Gamma
+    (`core/scan.py`) worked in the same tick, so this is a CLOB geo block, not a general outage.
+  - Earlier operator-machine cycles (e.g. 2026-09-03 17:36Z) read the CLOB fine, so the
+    machine's network egress has changed (VPN or region).
+  - Cost: an operator FULL spends 15 screener batches and its research, then cannot record a
+    single forecast row. That is pure waste, and it also leaves researched candidates with no
+    forecast rows for reconcile.py to match.
+  - Proposed fix (operator-owned, pick one): (a) a preflight in `loop.sh` that GETs one CLOB
+    book and runs LIGHT, or skips the tick, on 451; (b) restore the machine's egress so it
+    matches the earlier working runs. Do not fall back to gamma bestBid/bestAsk inside
+    `pmapi.book_quote`: fills must stay honest CLOB asks.
